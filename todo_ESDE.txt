@@ -1,0 +1,15 @@
+presentatie maken
+
+tutorial dev tool schrijven met kleine behapbare dataset
+
+bekijk kort even wat nog meer kan / moet voor docker container.
+
+Wat besproken:
+
+Intake van data. Onderandere de devtool elasticsearch interaction page
+
+
+
+Wat ik wil doen sws:
+data invoegen met json bestand en dit visualiseren met kibana.
+Onderzoeken wat nog wat mogelijkheden zijn voor data input. Zoals metrics ofzo? waarmee je data van je hardware kan mappen in elasticsearch
