@@ -1,110 +1,386 @@
-GET _nodes/stats
-
-#with this we create the favourite_pets index, must use PUT
-PUT favourite_pets
-
-#with POST elastic search will create an ID for you
-POST favourite_pets/_doc
+#
+# Contents
+#
+# 1. JSON Documents
+# 2. CRUD - Create / Read / Update / Delete
+# a. Create
+# - Different ways to insert/create an index
+# - Bulk indexing documents
+# b. Read
+# - Basic searches
+# - Intermediate searches
+# - Sample SQL query in Elasticsearch
+# - Facets and aggregations
+# - Aggregation use cases (doc values vs inverted index?) TODO
+# - Sample geo search
+# c. Update
+# - Updating documents TODO
+# d. Delete
+# - Deleting documents
+# 3. Mappings
+# 4. Analyzers
+# This is the Kibana Dev tools console, we'll use this to interact with Elasticsearch
+#
+# Elasticsearch stores documents using the JSON format
+# To quickly mention JSON, this is a sample JSON document
 {
-  "name": "Pietra",
-  "Species": "dragon"
+ "name" : "Elastic",
+ "location" : {
+ "state" : "Co",
+ "zipcode" : 80006
+ }
+}
+
+# And each value must be one of 6 types to be valid JSON (string, number, object, array, boolean, null)
+# http://www.json.org/
+
+#index met POST
+
+POST /books/_doc
+{
+ "title":"great waves",
+ "writer": "jack stofr"
 }
 
 
+# Let's search the index using a GET command
+GET /books/_search
 
-# Won't work, PUT needs an ID
-PUT favourite_pets/_doc/1
+# We'll dive deeper into the search API soon, for now, let's focus on indexing documents
+
+# Elasticsearch uses a REST API, and it matters whether we use POST vs PUT
+# PIf you use PUT, you have to add an ID
+# If we run the following we'll get an error since no id was given
+
+PUT /books/_doc
 {
-  "name": "Tupac",
-  "Species": "Dog"
+ "title":"small waves :(",
+ "writer": "James stofr"
 }
 
-## geeft een update omdat we PUT gebruiken en ID is the same
-PUT favourite_pets/_doc/1
+
+PUT /books/_doc/1
 {
-  "name": "Jantjuh",
-  "kanvanalleszijn": "jazeker dit is een document"
+  "title": "small waves :(",
+  "writer": "James stofr"
 }
 
-#with this we delete the index favourite_pets
-DELETE /favourite_pets
-
-
-
-# With this we search the entire favourite_pets index.
-get favourite_pets/_search
-
-
-#you can also add custom settings when creating index
-PUT /markindex
+# POST creates the document's ID for us
+POST /books/_doc
 {
-"settings": {
-"index.number_of_shards": 4,
-"index.number_of_replicas": 0
-  }
+  "title": "big boi waves :o",
+  "writer": "ratchet dilaird"
 }
 
-# GET _API/parameter ( what you want to have )
-# so 
-# GET _cluster/health is from the "cluster"API of wich you request health information
-# Zo is er ook de nodes api : GET _nodes/stats
+# Indexing the document automatically created the index for us, named "books"
 
-POST /_bulk
-{"index" : {"_index" : "markindex", "_id" : 1}}
-{"ball": "blue-ball"}
-{"index" : {"_index" : "markindex", "_id" : 2}}
-{"ball": "red-ball"}
-{"index" : {"_index" : "favourite_pets", "_id" : 2}}
-{"name": "bigboi", "species":"drgor"}
-  
+# Documents are saved within an index. An index doesn't actually exist on disk. It's only virtual
+# Indexes are used to categorize your documents with their types.
+# It is recommeneded to store only one type per index, as multiple types per index will not be supported ?? supported with what?
 
 
-POST _bulk
-{ "index" : { "_index" : "test", "_id" : "1" } }
-{ "field1" : "value1" }
-{ "delete" : { "_index" : "test", "_id" : "2" } }
-{ "create" : { "_index" : "test", "_id" : "3" } }
-{ "field1" : "value3" }
-{ "update" : {"_id" : "1", "_index" : "test"} }
-{ "doc" : {"field2" : "value2"} }
+#in the future Instead of dynamically creating the index based on the first document 
+# we add, we can create the index beforehand, to set certain settings
 
+# deletes the index we made automatically earlier.
+DELETE /books
 
+# explicitly cerates the index books with costum settings
+# We'll use 1 shard for this example, and no replicas, we probably wouldn't want to do this in production
 
-get markindex/_search
-get favourite_pets/_stats
-get favourite_pets/_search
-
-GET markindex/_search
+PUT /books
 {
-  "query" : {
-    "match" : {
-      "ball" : "blue" #or try ball
+ "settings": {
+ "index.number_of_shards": 1,
+ "index.number_of_replicas": 0
+ }
+}
+
+
+# When you need to index a lot of docs, you should use the bulk API, you may see signficant
+# performance benefits
+# note: when using bulk, an object can only consist of 1 line.. i know.. don't ask... it took
+# long to figure that was the cause of the error T_T
+
+POST /books/_bulk
+{"index":{"_id":1 }}
+{"name":"big boi waves", "writer":"ratchet dilaird", "rating": 78, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793199]}}
+{"index":{"_id":2 }}
+{"name":"big boi buildings", "writer":"cat", "rating": 89, "vendor location":{"type":"Point","coordinates":[-122.409752,37.752807]}}
+{"index":{"_id":3 }}
+{"name":"small boi buildings :(", "writer":"dogson barf barf", "rating": 80, "vendor location":{"type":"Point","coordinates":[-50.409061,11.783527]}}
+{"index":{"_id":4 }}
+{"name":"endles pride", "writer":"jackson stelman", "rating": 79, "vendor location":{"type":"Point","coordinates":[-122.388478,37.75072]}}
+{"index":{"_id":5 }}
+{"name":"small boi waves :(", "writer":"mr.idonotlikesmallwaves", "rating": 30, "vendor location":{"type":"Point","coordinates":[-122.481299,37.747228]}}
+{"index":{"_id":6 }}
+{"name":"eating without effort", "writer":"cat", "rating": 100, "vendor location":{"type":"Point","coordinates":[-122.481299,37.747228]}}
+{"index":{"_id":7 }}
+{"name":"building new world", "writer":"cat_cant_be_a_writer_lol?", "rating": 12, "vendor location":{"type":"Point","coordinates":[-122.400152,23.793300]}}
+{"index":{"_id":8 }}
+{"name":"Harry potter", "writer":"JK Rowling", "rating": 41, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793199]}}
+{"index":{"_id":9 }}
+{"name":"barry Alan and the small boi waves", "writer":"JK Rowling", "rating": 4, "vendor location":{"type":"Point","coordinates":[10.444152,9.191199]}}
+
+
+#we can check the index again. 
+GET /books/_search
+
+
+# Let's find all instances that mention buildings
+GET /books/_search
+{
+ "query": {
+ "match": {
+ "name": "buildings"
+ }
+ }
+}
+
+# lets list all titles containing small boi.
+# we use match_phrase here since small boi is 2 words
+
+
+
+# Results are ranked by relevance (_score value per instance) remember how that was nice for an search app? ;)
+# Let's look again, 
+GET /books/_search
+{
+  "query": {
+    "match_phrase": {
+      "name": "small boi"
     }
   }
 }
-# there is also match_phrase instead of match
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+# note, if you change "match_phrase" to "match" it will give you an instance with "big boi buildings" as name, since it 
+# searches for both words independently. 
+
+GET /books/_search
+{
+  "query": {
+    "match": {
+      "name": "small boi"
+    }
+  }
 }
+
+
+
+# We can also do boolean combinations of queries
+# combining the 2 together. in the below statement you search for the words small and boi 
+# independant from one another, and the words "barry alan" as a phrase. This is combined in the 
+# querry
+GET /books/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "name": "small boi"
+          }
+        },
+        {
+          "match_phrase": {
+            "name": "barry Alan"
+          }
+        }
+      ]
+    }
+  }
+}
+#
+# Or negate parts of a query, maybe you don't like waves
+GET /books/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "match": {
+            "name": "waves"
+          }
+        }
+      ]
+    }
+  }
+}
+#__________________________________________________
+# Combinations can be boosted for different effects
+# Let's emphasize places with "big" in the name using boost. This helps us define relevance in our search
+GET /books/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "match_phrase": {
+            "name": {
+              "query": "waves",
+              "boost": 3
+            }
+          }
+        },
+        {
+          "match_phrase": {
+            "name": {
+              "query": "buildings"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+#__________________________________________________
+# Finally, we can perform filtering, when we don't need text analysis (or need to do exact matches,
+# range queries, etc.)
+# Let's find books with a rating greater than 80 and let's sort it too
+# gte = Greater than or equal to. gt = Greater than.
+
+GET /books/_search
+{
+  "query": {
+    "range": {
+      "rating": {
+        "gte": 80
+      }
+    }
+  },
+   "sort": [
+     { "rating": "desc" } 
+      ]
+  }
+      
+   
+GET books/_search
+
+# remember how we told that apps like tinder and yelp use elasticsearch? How do they work with locations? Why can tinder match you with people close to you? it uses something called geo search within elastic! let's look into this.
+
+# Let's find book vendors closest to us using vender location.
+
+# Let's execute the follow geo query, sorted by distance to us (this will give an error)
+
+GET /books/_search
+{
+  "sort": [
+    {
+      "_geo_distance": {
+        "coordinates": {
+          "lat": 37.783527,
+          "lon": -122.409061
+        },
+        "order": "asc",
+        "unit": "km"
+      }
+    }
+  ]
+}
+# Error! Elasticsearch doesn't know the field is a geopoint
+# We must define this field as a geo point using mappings
+# Mapping are helpful for defining the structure of our document, and more efficiently storing/searching the data within our index
+# We have numbers/dates/strings, and geopoints, let's see what elasticsearch thinks our mapping is
+
+GET /books/_mapping
+
+# mapping is really just what elasticsearch thinks our variables types are. 
+
+# you see how elastic believes our "coordinates" variable to be float? This should be coordinates
+
+
+
+
+# Let's change the mapping, delete our index, and perform our bulk import again
+#go ahead and delete the index books and then recreate it.
+
+DELETE books
+GET books/_search
+PUT /books
+
+PUT books/_mapping/
+{
+  "properties": {
+    "name": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "writer": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "rating": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "coordinates": {
+      "type": "geo_point"
+    }
+  }
+}
+
+
+# now add all the data back again with the bulk api. I prepared the dataset below, but do you remember what the api call was without scrolling up ;)? 
+
+#API CALL HERE
+{"index":{"_id":1 }}
+{"name":"big boi waves", "writer":"ratchet dilaird", "rating": 78, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793199]}}
+{"index":{"_id":2 }}
+{"name":"big boi buildings", "writer":"cat", "rating": 89, "vendor location":{"type":"Point","coordinates":[-122.409752,37.752807]}}
+{"index":{"_id":3 }}
+{"name":"small boi buildings :(", "writer":"dogson barf barf", "rating": 80, "vendor location":{"type":"Point","coordinates":[-122.409061,37.783527]}}
+{"index":{"_id":4 }}
+{"name":"endles pride", "writer":"jackson stelman", "rating": 79, "vendor location":{"type":"Point","coordinates":[-122.388478,37.75072]}}
+{"index":{"_id":5 }}
+{"name":"small boi waves :(", "writer":"mr.idonotlikesmallwaves", "rating": 30, "vendor location":{"type":"Point","coordinates":[-122.481299,37.747228]}}
+{"index":{"_id":6 }}
+{"name":"eating without effort", "writer":"cat", "rating": 100, "vendor location":{"type":"Point","coordinates":[-122.481299,37.747228]}}
+{"index":{"_id":7 }}
+{"name":"building new world", "writer":"cat_cant_be_a_writer_lol?", "rating": 12, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793300]}}
+{"index":{"_id":8 }}
+{"name":"Harry potter", "writer":"JK Rowling", "rating": 41, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793199]}}
+{"index":{"_id":9 }}
+{"name":"barry Alan and the small boi waves", "writer":"JK Rowling", "rating": 4, "vendor location":{"type":"Point","coordinates":[10.444152,9.491199]}}
+
+
+# Now we can execute our original geo query
+
+GET /books/_search
+{
+  "sort": [
+    {
+      "_geo_distance": {
+        "coordinates": {
+          "lat": 37.783527,
+          "lon": -122.409061
+        },
+        "order": "desc",
+        "unit": "km"
+      }
+    }
+  ]
+}
+
+# See how it uses the coordinates 0.000.. , 0.000.. as a base?
+# That was a very short introduction to geo queries and mappings, the goal was to get your feet wet to
+# hopefuly go off and learn more
+# Let's finish the CRUD components, we covered C, and R, let's show show to update and delete
+# Let's add a flagged field to one of our documents, using a partial document update
 
