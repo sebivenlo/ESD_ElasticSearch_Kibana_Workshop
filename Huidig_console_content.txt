@@ -470,4 +470,4 @@ GET /books/_search
 
 
 
-# This concludes the introduction of the elasticsearch api. If you made it all the way through here, congrats :) and thanks for your attention ^^
+# This concludes the introduction of the elasticsearch api. If you made it all the way through here, congrats :) and thanks for your attention ^^.
