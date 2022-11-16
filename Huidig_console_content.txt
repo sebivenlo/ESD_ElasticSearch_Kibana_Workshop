@@ -2,6 +2,10 @@
 # I prepared some querries with elaboration about the principles.
 # I hope this offers a nice first impression.
 
+# feel free to change the data / querries and play around :P
+
+# TO RUN A QUERRY SELECT THE TOP LINE OF THAT PARTICULAR QUERRY AND PRESS THE PLAY ICON
+
 
 # Contents
 #
@@ -86,6 +90,18 @@ POST /books/_doc
   "title": "big boi waves :o",
   "writer": "ratchet dilaird"
 }
+
+
+
+# note by the way, that if we PUT a document with the same id multiple time,
+# it increments the version for us :) and tells us "result": "updated"
+
+PUT /books/_doc/1
+{
+ "title":"small waves :(",
+ "writer": "James stofr"
+}
+
 
 # Indexing the document automatically created the index for us, named "books" like metnioned before.
 
@@ -315,8 +331,9 @@ GET /books/_mapping
 
 DELETE books
 
-
 PUT /books
+
+# here we change the data type into geo_point. We also change rating into "long" to get the aggregations working later on.
 
 PUT books/_mapping
 {
@@ -340,7 +357,7 @@ PUT books/_mapping
       }
     },
     "rating": {
-      "type": "text",
+      "type": "long",
       "fields": {
         "keyword": {
           "type": "keyword",
@@ -358,6 +375,7 @@ PUT books/_mapping
 # now add all the data back again with the bulk api. I prepared the dataset below, but do you remember what the api call was without scrolling up ;)? 
 
 #API CALL HERE
+POST /books/_bulk
 {"index":{"_id":1 }}
 {"name":"big boi waves", "writer":"ratchet dilaird", "rating": 78, "vendor location":{"type":"Point","coordinates":[-122.400152,37.793199]}}
 {"index":{"_id":2 }}
@@ -403,20 +421,53 @@ GET /books/_search
 # See how it uses the coordinates 0.000.. , 0.000.. as a base?
 # That was a very short introduction to geo queries and mappings, the goal was to get your feet wet to
 # hopefuly go off and learn more
-# Let's finish the CRUD components, we covered C, and R, let's show show to update and delete
 
-GET /books/_doc/1
 
-PUT /books/_doc/1
+# Aggregations (one use case is faceting data) are very interesting
+# We won't have time to cover aggregation in depth now, but we want to get you familiar with how they work, so you can use them on your own
+# Let's search for the term "boi", and bucket results by rating score (similar to the facets you would see in an ebay site)
+# Show:
+#https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2380057.m570.l1313.TR12.TRC2.A0.H0.Xwatc
+# h.TRS0&_nkw=watch&_sacat=0
+
+# with the aggregations we can class different ranges in the same group. 
+# elastic will count those documents for you. It's listed at the bottom if the return value in the right
+
+
+
+GET /books/_search
 {
- "title":"small waves :(",
- "writer": "James stofr"
+  "query": {
+    "match": {
+      "name": "boi"
+    }
+  },
+  "aggregations": {
+    "rating": {
+      "range": {
+        "field": "rating",
+        "ranges": [
+          {
+            "key": "0-80",
+            "from": 0,
+            "to": 80
+          },
+          {
+            "key": "81-90",
+            "from": 81,
+            "to": 90
+          },
+          {
+            "key": "91-100",
+            "from": 91,
+            "to": 100
+          }
+        ]
+      }
+    }
+  }
 }
 
 
-UPDATE /books/_doc/1
-{
- "title":"small waves :(",
- "writer": "James stofr"
-}
 
+# This concludes the introduction of the elasticsearch api. If you made it all the way through here, congrats :) and thanks for your attention ^^
