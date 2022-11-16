@@ -1,28 +1,20 @@
-#
+# Hello and welcome to this introduction to the api of elastic search. The intention is to get some quick hands on experience with the functionalities of elastic api.
+# I prepared some querries with elaboration about the principles.
+# I hope this offers a nice first impression.
+
+
 # Contents
 #
 # 1. JSON Documents
 # 2. CRUD - Create / Read / Update / Delete
-# a. Create
-# - Different ways to insert/create an index
-# - Bulk indexing documents
-# b. Read
-# - Basic searches
-# - Intermediate searches
-# - Sample SQL query in Elasticsearch
-# - Facets and aggregations
-# - Aggregation use cases (doc values vs inverted index?) TODO
-# - Sample geo search
-# c. Update
-# - Updating documents TODO
-# d. Delete
-# - Deleting documents
-# 3. Mappings
-# 4. Analyzers
-# This is the Kibana Dev tools console, we'll use this to interact with Elasticsearch
-#
+# 3. geosearch and mapping
+
+
+
+
 # Elasticsearch stores documents using the JSON format
 # To quickly mention JSON, this is a sample JSON document
+
 {
  "name" : "Elastic",
  "location" : {
@@ -31,10 +23,20 @@
  }
 }
 
-# And each value must be one of 6 types to be valid JSON (string, number, object, array, boolean, null)
-# http://www.json.org/
 
-#index met POST
+
+
+# one uses elastic by calling it's api endpoints. Elastic uses REST api. It has the methods GET, PUT, POST, UPDATE and DELETE. The general syntax is:
+
+
+# METHOD _API/parameter
+
+# so if i wanted to check my cluster health, i would call the _cluster API and send "health" as parameter. You can try it if you want.
+
+
+GET _cluster/health
+
+# like we said, all documents are stored in an index. If we wanna add a document the syntax is POST /index/_doc
 
 POST /books/_doc
 {
@@ -42,14 +44,27 @@ POST /books/_doc
  "writer": "jack stofr"
 }
 
+# We now added a document into the newly created book index (elastic does this automatically for us in the above querry)
 
 # Let's search the index using a GET command
 GET /books/_search
 
+# The bit where it says for example:
+#
+# "hits": {
+#  "total": {
+#     "value": 1,
+#     "relation": "eq"
+#   },
+#
+
+# tells us there is 1 hit. eq means equal to 1. in some big data sets elastic will stop at a maximum number and will then give you "gte" instead of "eq" meaning there is still more to be found. 
+
+
 # We'll dive deeper into the search API soon, for now, let's focus on indexing documents
 
 # Elasticsearch uses a REST API, and it matters whether we use POST vs PUT
-# PIf you use PUT, you have to add an ID
+# If you use PUT, you have to add an ID
 # If we run the following we'll get an error since no id was given
 
 PUT /books/_doc
@@ -58,7 +73,7 @@ PUT /books/_doc
  "writer": "James stofr"
 }
 
-
+# but if we specify an id..
 PUT /books/_doc/1
 {
   "title": "small waves :(",
@@ -72,20 +87,19 @@ POST /books/_doc
   "writer": "ratchet dilaird"
 }
 
-# Indexing the document automatically created the index for us, named "books"
+# Indexing the document automatically created the index for us, named "books" like metnioned before.
 
 # Documents are saved within an index. An index doesn't actually exist on disk. It's only virtual
-# Indexes are used to categorize your documents with their types.
-# It is recommeneded to store only one type per index, as multiple types per index will not be supported ?? supported with what?
+# Indexes are used to categorize your documents with their types. Just to offer us some structure really. Nothing else.
+# It is recommeneded to store only one type per index.
 
 
-#in the future Instead of dynamically creating the index based on the first document 
-# we add, we can create the index beforehand, to set certain settings
+#in the future Instead of dynamically creating the index by adding a document, we can create the index beforehand.
 
 # deletes the index we made automatically earlier.
 DELETE /books
 
-# explicitly cerates the index books with costum settings
+# explicitly creates the index books with costum settings
 # We'll use 1 shard for this example, and no replicas, we probably wouldn't want to do this in production
 
 PUT /books
@@ -97,10 +111,9 @@ PUT /books
 }
 
 
-# When you need to index a lot of docs, you should use the bulk API, you may see signficant
-# performance benefits
-# note: when using bulk, an object can only consist of 1 line.. i know.. don't ask... it took
-# long to figure that was the cause of the error T_T
+# When you need to index a lot of docs, you should use the bulk API, you may see signficant performance benefits.
+
+# note: when using bulk, an object can only consist of 1 line.. i know.. don't ask... it took so long to figure out that was the cause of the error T_T
 
 POST /books/_bulk
 {"index":{"_id":1 }}
@@ -123,11 +136,16 @@ POST /books/_bulk
 {"name":"barry Alan and the small boi waves", "writer":"JK Rowling", "rating": 4, "vendor location":{"type":"Point","coordinates":[10.444152,9.191199]}}
 
 
-#we can check the index again. 
+#check the index again. 
 GET /books/_search
 
 
+# let's look into search :
+
+
 # Let's find all instances that mention buildings
+
+
 GET /books/_search
 {
  "query": {
@@ -137,13 +155,9 @@ GET /books/_search
  }
 }
 
-# lets list all titles containing small boi.
+# We can also list all titles containing small boi.
 # we use match_phrase here since small boi is 2 words
 
-
-
-# Results are ranked by relevance (_score value per instance) remember how that was nice for an search app? ;)
-# Let's look again, 
 GET /books/_search
 {
   "query": {
@@ -153,9 +167,11 @@ GET /books/_search
   }
 }
 
+# Results are ranked by relevance (_score value per instance) remember how that was nice for an search app? ;)
+
 
 # note, if you change "match_phrase" to "match" it will give you an instance with "big boi buildings" as name, since it 
-# searches for both words independently. 
+# searches for both "small" and "boi" independently. 
 
 GET /books/_search
 {
@@ -209,7 +225,8 @@ GET /books/_search
 }
 #__________________________________________________
 # Combinations can be boosted for different effects
-# Let's emphasize places with "big" in the name using boost. This helps us define relevance in our search
+# Let's emphasize places with "big" in the name using boost. This helps us define relevance in our search. ( nice for search engines )
+
 GET /books/_search
 {
   "query": {
@@ -236,10 +253,10 @@ GET /books/_search
 }
 
 #__________________________________________________
-# Finally, we can perform filtering, when we don't need text analysis (or need to do exact matches,
-# range queries, etc.)
+# Finally, we can perform filtering. For example on ranges.
 # Let's find books with a rating greater than 80 and let's sort it too
-# gte = Greater than or equal to. gt = Greater than.
+# gte = Greater than or equal to.
+# gt = Greater than.
 
 GET /books/_search
 {
@@ -255,9 +272,7 @@ GET /books/_search
       ]
   }
       
-   
-GET books/_search
-
+  
 # remember how we told that apps like tinder and yelp use elasticsearch? How do they work with locations? Why can tinder match you with people close to you? it uses something called geo search within elastic! let's look into this.
 
 # Let's find book vendors closest to us using vender location.
@@ -279,9 +294,9 @@ GET /books/_search
     }
   ]
 }
-# Error! Elasticsearch doesn't know the field is a geopoint
+# Elasticsearch doesn't know the field is a geopoint
 # We must define this field as a geo point using mappings
-# Mapping are helpful for defining the structure of our document, and more efficiently storing/searching the data within our index
+# Mappings are helpful for defining the structure of our document, and more efficiently storing/searching the data within our index
 # We have numbers/dates/strings, and geopoints, let's see what elasticsearch thinks our mapping is
 
 GET /books/_mapping
@@ -294,13 +309,16 @@ GET /books/_mapping
 
 
 # Let's change the mapping, delete our index, and perform our bulk import again
-#go ahead and delete the index books and then recreate it.
+# go ahead and delete the index books and then recreate it.
+
+# We need to delete it, THEN create the index THEN set the mapping THEN add the data gain
 
 DELETE books
-GET books/_search
+
+
 PUT /books
 
-PUT books/_mapping/
+PUT books/_mapping
 {
   "properties": {
     "name": {
@@ -360,7 +378,11 @@ PUT books/_mapping/
 {"name":"barry Alan and the small boi waves", "writer":"JK Rowling", "rating": 4, "vendor location":{"type":"Point","coordinates":[10.444152,9.491199]}}
 
 
-# Now we can execute our original geo query
+#Let's quickly look at our mappings again
+
+GET /books/_mapping
+
+# Now we can execute our original geo query. Now that elastic knows coordinates are of type "geo_point" we can work with it :)
 
 GET /books/_search
 {
@@ -382,5 +404,19 @@ GET /books/_search
 # That was a very short introduction to geo queries and mappings, the goal was to get your feet wet to
 # hopefuly go off and learn more
 # Let's finish the CRUD components, we covered C, and R, let's show show to update and delete
-# Let's add a flagged field to one of our documents, using a partial document update
+
+GET /books/_doc/1
+
+PUT /books/_doc/1
+{
+ "title":"small waves :(",
+ "writer": "James stofr"
+}
+
+
+UPDATE /books/_doc/1
+{
+ "title":"small waves :(",
+ "writer": "James stofr"
+}
 
