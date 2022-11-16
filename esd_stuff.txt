@@ -1,9 +1,0 @@
-Nog meer over elastic ( waar kan je het nog meer voor gebruiken / wat kan het bieden ) 
-- relevancy <- daar iets over zeggen
-- waarom is elastic search goed voor security
-- Wat is enterprise search??
-- observability? waarom is hier een knop voor bijv
-
-
-Kibana 
-- data visualization ( laat de groep een dataset visualizen maybe? )

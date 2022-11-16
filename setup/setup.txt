@@ -1,0 +1,55 @@
+
+1. setup a requirement in docker
+go to https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+
+or read it below
+
+
+
+Linux
+
+To view the current value for the vm.max_map_count setting, run:
+
+grep vm.max_map_count /etc/sysctl.conf
+vm.max_map_count=262144
+
+
+To apply the setting on a live system, run:
+
+sysctl -w vm.max_map_count=262144
+
+
+--------
+macOS with Docker for Mac:
+
+From the command line, run:
+
+screen ~/Library/Containers/com.docker.docker/Data/vms/0/tty
+
+
+--------
+Windows and macOS with Docker Desktop:
+
+The vm.max_map_count setting must be set via docker-machine:
+
+docker-machine ssh
+sudo sysctl -w vm.max_map_count=262144
+--------
+
+
+
+( most windows users have this i think)
+
+Windows with Docker Desktop WSL 2 backend :
+The vm.max_map_count setting must be set in the docker-desktop container:
+
+wsl -d docker-desktop
+sysctl -w vm.max_map_count=262144
+
+
+2. run the batch files on windows or bach files for unix. Or run the commands on your own. They are listed in a txt file aswell
+
+When setting up the container for elastic you will see some generated passwords in the kibana window, keep this window open you will need.
+
+
+
